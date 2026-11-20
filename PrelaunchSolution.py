@@ -4,6 +4,7 @@ import numpy as np
 
 from Paramaters import *
 from TargetEstimationExtrap import TargetEstimationExtrap
+from MissileSimulation import MissileSimulation
 
 sim = SimParams()
 asset = AssetParams()
@@ -11,6 +12,7 @@ ground = GroundParams()
 aero = AeroParams()
 thrust = ThrustParams()
 missile = MissileParams()
+missile_sim = MissileSimulation()
 TSEE = TargetEstimationExtrap()
 launcher = LauncherParams()
 env = Enviroment()
@@ -162,9 +164,9 @@ class PrelaunchSolution:
     
         while angle_diff > 1e-3 and iter < iter_max:  
             
-            state_logging_0, time_logging_0, poca_stats_0 =  self.missile_propogator(launch_angle, target_traj, tgo_max)
-            state_logging_plus, time_logging_plus, poca_stats_plus =  self.missile_propogator(launch_angle + delta_angle, target_traj, tgo_max)
-            state_logging_minus, time_logging_minus, poca_stats_minus =  self.missile_propogator(launch_angle - delta_angle, target_traj, tgo_max)
+            state_logging_0, time_logging_0, poca_stats_0 =  missile_sim.missile_propogator(launch_angle, target_traj, tgo_max)
+            state_logging_plus, time_logging_plus, poca_stats_plus =  missile_sim.missile_propogator(launch_angle + delta_angle, target_traj, tgo_max)
+            state_logging_minus, time_logging_minus, poca_stats_minus =  missile_sim.missile_propogator(launch_angle - delta_angle, target_traj, tgo_max)
 
             cost_0= self.get_cost(poca_stats_0)
             cost_plus = self.get_cost(poca_stats_plus)
@@ -192,145 +194,7 @@ class PrelaunchSolution:
         return state_logging_0, time_logging_0, poca_stats_0, cost_0, launch_angle
             
     
-    def missile_propogator(self, launch_angle, target_traj, tgo_max):
-        
-        ## simulates the missile flyout to find the trajectory and relevant statistics based on the launch angle and target trajectory
-        
-        time = 0.0
-        iter = 0
-            
-        
-        # initial state for vehicle off rail
-            
-        
-
-        v = 30 # 
-        
-        missile_state = SimpleNamespace(x = self.launcher.launcher_emplacement_x,
-                                            z = self.launcher.launcher_emplacement_z,
-                                            vx = v * np.cos(launch_angle),
-                                            vz = -v * np.sin(launch_angle),
-                                            alpha = np.deg2rad(5),
-                                            q = 0, 
-                                            theta = launch_angle)
-            
-        
-        # initial gamma 
-        gamma = launch_angle
-            
-        state_log = [SimpleNamespace(**vars(missile_state))]
-        time_log = [SimpleNamespace(time=time)]
-     
-            
-            
-        while missile_state.z <= 0.0:
-            
-                time+= self.ground.extrap_time_step
-                iter += 1
-                
-                if iter >= len(target_traj):
-                    # target window ended before POCA / impact; stop at the last known target state
-                    break
-                
-                target_state = target_traj[iter]
-
-                
-                #  Compute Aero Forces/Moments and Thrust 
-                
-                T = self.get_thrust(time)
-                AeroForces = self.get_aero_forces(missile_state)
-                
-                D = AeroForces.Drag
-                L = AeroForces.Lift
-                M = AeroForces.Moment
-
-                ## Flyout will be zero effort trajectory until homing.
-
-                # -------- Compute Homing Guidane Command ---------------
-
-                Range = np.linalg.norm(np.array([target_state.x, target_state.z]) - np.array([missile_state.x, missile_state.z]))
-                ClosingVelocity = -np.dot(np.array([target_state.x, target_state.z]) - np.array([missile_state.x, missile_state.z]),
-                                         np.array([target_state.vx, target_state.vz]) - np.array([missile_state.vx, missile_state.vz])) / Range
-
-
-
-                tgo = Range / max(ClosingVelocity, 1e-9) # time-to-go
-
-                if tgo < 6: 
-
-                    los = -np.atan2(target_state.z - missile_state.z, target_state.x - missile_state.x)
-                    los_rate = -((target_state.x - missile_state.x) * (target_state.vz - missile_state.vz) - (target_state.z - missile_state.z) * (target_state.vx - missile_state.vx)) / (Range**2)
-
-                    N = 3
-
-                    a_normal_cmd = N*ClosingVelocity*los_rate*np.cos(los - gamma)
-
-                    homing_guidance_allowed = True
-                else:
-                    homing_guidance_allowed = False
-                
-
-                ## ---------- Integrate the equations of motion for the missile -------------------
-                if homing_guidance_allowed:
-                    gammadot = (a_normal_cmd - self.env.gravity * np.cos(gamma)) / v
-                else: 
-                    gammadot =   (T*np.sin(missile_state.alpha) )/(self.missile.m*v) - self.env.gravity * np.cos(gamma) / v
-
-
-
-
-
-                    ## future: add alpha and q dynamics with zero control effort (aka Zero Effort Trajectory)
-                qdot = M/self.missile.Iy
-                alphadot = missile_state.q - gammadot
-                vdot = T*np.cos(missile_state.alpha)/self.missile.m -self.env.gravity * np.sin(gamma) - D/self.missile.m
-            
-        
-                v = v + vdot * self.ground.extrap_time_step
-                gamma = gamma + gammadot * self.ground.extrap_time_step
-                missile_state.vx = v * np.cos(gamma)
-                missile_state.vz = -v * np.sin(gamma)
-                
-                missile_state.alpha = missile_state.alpha + alphadot * self.ground.extrap_time_step
-                missile_state.x = missile_state.x + missile_state.vx * self.ground.extrap_time_step
-                missile_state.z = missile_state.z + missile_state.vz * self.ground.extrap_time_step
-        
-               
-    
-                
-                if iter >= len(target_traj):
-                    # target window ended before POCA / impact; stop at the last known target state
-                    break
-                
-                target_state = target_traj[iter]
-                
-                state_log.append(SimpleNamespace(**vars(missile_state)))
-                time_log.append(SimpleNamespace(time=time))
-                
-                # scalar engagement stats at this step, for the stopping condition
-                
-                prel = np.array([target_state.x, target_state.z]) - np.array([missile_state.x, missile_state.z])
-                vrel = np.array([target_state.vx, target_state.vz]) - np.array([missile_state.vx, missile_state.vz])
-                rng = np.linalg.norm(prel)
-                range_rate = np.dot(prel, vrel) / max(rng, 1e-9)
-                
-                # gets poca stats 
-                
-                
-                
-                if range_rate >= 0:
-                    poca_stats = self.get_poca_stats(state_log, target_traj, tgo_max)
-                    break
-                
-            
-        poca_stats = self.get_poca_stats(state_log, target_traj, tgo_max)        
-       
-               
-            
-                
-        
-        return state_log, time_log, poca_stats
-        
+   
     def get_poca_stats(self, state_log, target_traj, tgo_max):
     # state logging: x, z, vx, vz   RENU
          # target trajectory: x, z, vx, vz RENU

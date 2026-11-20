@@ -1,4 +1,4 @@
-from prelaunch_paramaters import get_prelaunch_paramaters
+from launch_paramaters import get_launch_paramaters
 from Paramater import ThrustParams, AeroParams, VehicleParams, LauncherParams, SimParams, AssetParams, TargetParams, RadarParams, GroundParams
 from Target_Traj_Extrap_Est import extrapolate_target_traj
 from Launcher import get_launch_cmd
@@ -33,7 +33,7 @@ state_logging = np.zeros((4, sim.num_steps)) # x, z, vx, vz
 # initialize clock
 sim_clock = 0
 tsee_clock = 0
-prelaunch_paramaters_clock = 0 # computes a new solution every s seconds unless solution is locked in and then the target extrap 
+launch_paramaters_clock = 0 # computes a new solution every s seconds unless solution is locked in and then the target extrap 
 # must result in the target being outside the pip area
 iter = 0
 
@@ -79,7 +79,7 @@ while iter < sim.num_steps:
         target_extrap =  extrapolate_target_traj(true_target_state, ground.dt_extrap, asset)
         
     if engagement_solution == "None":
-        best_state_logging, best_time_logging, best_stats, best_cost_inner, best_cost_outer, best_launcher_angle, best_time_to_asset_desired, best_target_traj, pred_pip, pred_tof, coeff_segments, best_launch_time = get_prelaunch_paramaters(missile_state, aero, thrust, vehicle, ground.dt_extrap, sim_clock, launcher.launcher_angle, target_extrap)
+        best_state_logging, best_time_logging, best_stats, best_cost_inner, best_cost_outer, best_launcher_angle, best_time_to_asset_desired, best_target_traj, pred_pip, pred_tof, coeff_segments, best_launch_time = get_launch_paramaters(missile_state, aero, thrust, vehicle, ground.dt_extrap, sim_clock, launcher.launcher_angle, target_extrap)
         engagement_solution = "Computed"  
 
     if engagement_solution == "Computed":

@@ -14,7 +14,7 @@ class GroundSoftware:
         self.PreLaunchSolution = PrelaunchSolution()
         
         
-    def prelaunch_paramaters(self, extrapolated_target_state, validity_time):
+    def launch_paramaters(self, extrapolated_target_state, validity_time):
         # Example: set simulation time step to 0.1 seconds
-        prelaunch_paramaters = self.PreLaunchSolution.get_prelaunch_solution(extrapolated_target_state, validity_time)
-        return prelaunch_paramaters
+        launch_paramaters = self.PreLaunchSolution.get_prelaunch_solution(extrapolated_target_state, validity_time)
+        return launch_paramaters

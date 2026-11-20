@@ -59,14 +59,14 @@ TSEE_clock = 0
 # missile_tail_out_of_tube = False
 # uplink_simulated_delay = 0
 # uplink_data = None
-# prelaunch_paramaters = None
+# launch_paramaters = None
 # launch = None
 # downlink_decoded = None
 # uplink = None
 # tof = 0
 # tof_onboard = 0
 radar_measurements = None
-prelaunch_paramaters = None
+launch_paramaters = None
 target_extrapolation = None
 launch_cmd_issued = False
 
@@ -127,17 +127,17 @@ for i in range(len(target_traj)):
 
 
    # if not launcher.launchcmd and estimated_target_state is not None:
-        if prelaunch_paramaters is None and target_extrapolation is not None:
-            prelaunch_paramaters = ground.prelaunch_paramaters(target_extrapolation, validity_time)
+        if launch_paramaters is None and target_extrapolation is not None:
+            launch_paramaters = ground.launch_paramaters(target_extrapolation, validity_time)
             log(f"Prelaunch solution computed. Time = {clock:.2f}")
            
         
        
 
-        if prelaunch_paramaters is not None and clock >= prelaunch_paramaters.time_at_launch and not launch_cmd_issued:
+        if launch_paramaters is not None and clock >= launch_paramaters.time_at_launch and not launch_cmd_issued:
             
             log(f"Launch command issued. Time = {clock:.2f}")
-            log(f"Prelaunch Parameters. PIP: {prelaunch_paramaters.pred_pip}, Pred TOF: {prelaunch_paramaters.pred_tof}, Launch Angle: {np.rad2deg(prelaunch_paramaters.launch_angle)} , Time at Launch: {prelaunch_paramaters.time_at_launch}, Miss Distance: {prelaunch_paramaters.poca_stats.miss_distance}"   )
+            log(f"Prelaunch Parameters. PIP: {launch_paramaters.pred_pip}, Pred TOF: {launch_paramaters.pred_tof}, Launch Angle: {np.rad2deg(launch_paramaters.launch_angle)} , Time at Launch: {launch_paramaters.time_at_launch}, Miss Distance: {launch_paramaters.poca_stats.miss_distance}"   )
             launch_cmd_issued = True
         
 #     if downlink_decoded is not None:
@@ -181,10 +181,10 @@ for i in range(len(target_traj)):
 #             missile_onboard_state, status = missile_onboard.initialize_missile_onboard() # x, z, theta
             
 #             # start missile truth propagation
-#             missile_true_state, tof = missile_truth.propogate_missile_truth(prelaunch_paramaters, uplink_data, missile_true_state, "MISSILE_AWAY", tof)
+#             missile_true_state, tof = missile_truth.propogate_missile_truth(launch_paramaters, uplink_data, missile_true_state, "MISSILE_AWAY", tof)
             
 #             # start missile onboard propagation
-#             missile_onboard_state, status, tof_onboard  = missile_onboard.propogate_onboard_missile(prelaunch_paramaters, uplink_data, missile_onboard_state, "MISSILE_AWAY", tof_onboard, status)
+#             missile_onboard_state, status, tof_onboard  = missile_onboard.propogate_onboard_missile(launch_paramaters, uplink_data, missile_onboard_state, "MISSILE_AWAY", tof_onboard, status)
             
 #             # status here is not a downlink, its onboard missile status so it knows to transition between different stages of missile flight (e.g., tube clearance, initial turn, etc.)
             
@@ -195,10 +195,10 @@ for i in range(len(target_traj)):
             
             
 #             # missile truth propagation (no guidance, only thrust)
-#             missile_true_state, tof = missile_truth.propogate_missile_truth(prelaunch_paramaters, uplink_data, missile_true_state, "MISSILE_TAIL_OUT_OF_TUBE", tof)
+#             missile_true_state, tof = missile_truth.propogate_missile_truth(launch_paramaters, uplink_data, missile_true_state, "MISSILE_TAIL_OUT_OF_TUBE", tof)
                     
 #             # missile onboard propagation (no guidance, only thrust)
-#             missile_onboard_state, status, tof_onboard = missile_onboard.propogate_onboard_missile(prelaunch_paramaters, uplink_data, missile_onboard_state, "MISSILE_TAIL_OUT_OF_TUBE", tof_onboard, status)
+#             missile_onboard_state, status, tof_onboard = missile_onboard.propogate_onboard_missile(launch_paramaters, uplink_data, missile_onboard_state, "MISSILE_TAIL_OUT_OF_TUBE", tof_onboard, status)
             
 #             # check if missile has traveled length of tube 
 #             if status.tube_cleared:
@@ -208,10 +208,10 @@ for i in range(len(target_traj)):
 #         elif initial_turn_completed == False: 
             
 #             # missile truth propagation (initial turn guidance)
-#             missile_true_state, tof = missile_truth.propogate_missile_truth(prelaunch_paramaters, uplink_data, missile_true_state, "INITIAL_TURN", tof)
+#             missile_true_state, tof = missile_truth.propogate_missile_truth(launch_paramaters, uplink_data, missile_true_state, "INITIAL_TURN", tof)
                             
 #             # missile onboard propagation (initial turn guidance )
-#             missile_onboard_state, status, downlink, tof_onboard = missile_onboard.propogate_onboard_missile(prelaunch_paramaters, uplink_data, missile_onboard_state, "INITIAL_TURN", tof_onboard)
+#             missile_onboard_state, status, downlink, tof_onboard = missile_onboard.propogate_onboard_missile(launch_paramaters, uplink_data, missile_onboard_state, "INITIAL_TURN", tof_onboard)
             
 #             if status.initial_turn_completed:
 #                 initial_turn_completed = True
@@ -219,10 +219,10 @@ for i in range(len(target_traj)):
 #         elif midcourse_completed == False:
             
 #             # missile truth propagation (midcourse guidance)
-#             missile_true_state, tof = missile_truth.propogate_missile_truth(prelaunch_paramaters, uplink_data, missile_true_state, "MIDCOURSE", tof)
+#             missile_true_state, tof = missile_truth.propogate_missile_truth(launch_paramaters, uplink_data, missile_true_state, "MIDCOURSE", tof)
                                     
 #             # missile onboard propagation (midcourse guidance )
-#             missile_onboard_state, status, downlink, tof_onboard = missile_onboard.propogate_onboard_missile(prelaunch_paramaters, uplink_data, missile_onboard_state, "MIDCOURSE", tof_onboard, status)
+#             missile_onboard_state, status, downlink, tof_onboard = missile_onboard.propogate_onboard_missile(launch_paramaters, uplink_data, missile_onboard_state, "MIDCOURSE", tof_onboard, status)
             
 #             if downlink.self_destruct:
 #                 log(f"Self destruct initiated. Time = {clock:.2f}")
@@ -237,10 +237,10 @@ for i in range(len(target_traj)):
 #             # hold gamma angle unti target is acquired via seeker
             
 #             # missile truth propagation (midcourse guidance)
-#             missile_true_state, tof = missile_truth.propogate_missile_truth(prelaunch_paramaters, uplink_data, missile_true_state, "ACQURING_TARGET", tof)
+#             missile_true_state, tof = missile_truth.propogate_missile_truth(launch_paramaters, uplink_data, missile_true_state, "ACQURING_TARGET", tof)
                                             
 #             # missile onboard propagation (midcourse guidance )
-#             missile_onboard_state, status, downlink, tof_onboard = missile_onboard.propogate_onboard_missile(prelaunch_paramaters, uplink_data, missile_onboard_state, "ACQURING_TARGET", tof_onboard, status)
+#             missile_onboard_state, status, downlink, tof_onboard = missile_onboard.propogate_onboard_missile(launch_paramaters, uplink_data, missile_onboard_state, "ACQURING_TARGET", tof_onboard, status)
             
 #             if downlink.self_destruct:
 #                 log(f"Self destruct initiated. Time = {clock:.2f}")
@@ -253,10 +253,10 @@ for i in range(len(target_traj)):
 #         elif homing_guidance_completed == False:
             
 #             # missile truth propagation (homing guidance)
-#             missile_true_state, tof = missile_truth.propogate_missile_truth(prelaunch_paramaters, uplink_data, missile_true_state, "HOMING", tof)
+#             missile_true_state, tof = missile_truth.propogate_missile_truth(launch_paramaters, uplink_data, missile_true_state, "HOMING", tof)
                                             
 #             # missile onboard propagation (homing guidance )
-#             missile_onboard_state, status, downlink, tof_onboard = missile_onboard.propogate_onboard_missile(prelaunch_paramaters, uplink_data, missile_onboard_state, "HOMING", tof_onboard, status)
+#             missile_onboard_state, status, downlink, tof_onboard = missile_onboard.propogate_onboard_missile(launch_paramaters, uplink_data, missile_onboard_state, "HOMING", tof_onboard, status)
 #             if downlink.self_destruct:
 #                 log(f"Self destruct initiated. Time = {clock:.2f}")
 #                 Missile_Self_Destruct = True
@@ -268,10 +268,10 @@ for i in range(len(target_traj)):
 #         elif final_lunge_completed == False:
             
 #             # missile truth propagation (final lunge)
-#             missile_true_state, tof = missile_truth.propogate_missile_truth(prelaunch_paramaters, uplink_data, missile_true_state, "FINAL_LUNGE", tof)
+#             missile_true_state, tof = missile_truth.propogate_missile_truth(launch_paramaters, uplink_data, missile_true_state, "FINAL_LUNGE", tof)
                                             
 #             # missile onboard propagation (final lunge)
-#             missile_onboard_state, status, downlink, tof_onboard = missile_onboard.propogate_onboard_missile(prelaunch_paramaters, uplink_data, missile_onboard_state, "FINAL_LUNGE", tof_onboard, status)
+#             missile_onboard_state, status, downlink, tof_onboard = missile_onboard.propogate_onboard_missile(launch_paramaters, uplink_data, missile_onboard_state, "FINAL_LUNGE", tof_onboard, status)
             
         
 #             if status.final_range <= 0.5:
@@ -319,11 +319,11 @@ traj_z = np.array([state.z for state in target_traj])
 beam_length = 1.05 * np.max(np.hypot(traj_x - radar_x, traj_z - radar_z))
 
 # missile flyout from the prelaunch solution (time_logging is seconds since launch)
-if prelaunch_paramaters is not None:
-    msl_x = np.array([s.x for s in prelaunch_paramaters.state_logging])
-    msl_z = np.array([s.z for s in prelaunch_paramaters.state_logging])
-    msl_t = np.array([t.time for t in prelaunch_paramaters.time_logging])
-    time_at_launch = prelaunch_paramaters.time_at_launch
+if launch_paramaters is not None:
+    msl_x = np.array([s.x for s in launch_paramaters.state_logging])
+    msl_z = np.array([s.z for s in launch_paramaters.state_logging])
+    msl_t = np.array([t.time for t in launch_paramaters.time_logging])
+    time_at_launch = launch_paramaters.time_at_launch
 else:
     msl_x = msl_z = msl_t = None
     time_at_launch = None
@@ -408,10 +408,10 @@ ani.save(ANI_FILE, writer=PillowWriter(fps=50))
 print(f"Animation saved to {ANI_FILE}")
 
 # missile flyout profiles from the prelaunch solution: velocity and angle of attack vs time
-if prelaunch_paramaters is not None:
-    flyout_t = np.array([t.time for t in prelaunch_paramaters.time_logging])
-    flyout_v = np.array([np.hypot(s.vx, s.vz) for s in prelaunch_paramaters.state_logging])
-    flyout_aoa = np.array([np.rad2deg(s.alpha) for s in prelaunch_paramaters.state_logging])
+if launch_paramaters is not None:
+    flyout_t = np.array([t.time for t in launch_paramaters.time_logging])
+    flyout_v = np.array([np.hypot(s.vx, s.vz) for s in launch_paramaters.state_logging])
+    flyout_aoa = np.array([np.rad2deg(s.alpha) for s in launch_paramaters.state_logging])
 
     fig2, (ax_v, ax_a) = plt.subplots(2, 1, sharex=True, figsize=(8, 6))
     ax_v.plot(flyout_t, flyout_v, color="black")
